@@ -1,7 +1,7 @@
 # Joshua Popp
 # Henry Nguyen
-# Kenny Tran
-# Nicholas Girmes
+# Kenny
+# Nick Girmes
 
 import collections
 import dataclasses
@@ -60,19 +60,25 @@ async def close_connection(exception):
 
 @app.route("/user/auth/<string:username>&<string:password>", methods=["GET"])
 async def authenticate(username, password):
+    print("RUNNING USER AUTH")
+    print(username)
+    print(password)
     db = await _get_db()
+    app.logger.info("SELECT * FROM users WHERE username = :username AND password = :password")
     user = await db.fetch_one("SELECT * FROM users WHERE username = :username AND password = :password"
     , values={"username": username, "password": password})
+    print(user)
     if user:
         return {"authenticated": "True"}
-        
+        #also return http 200
     else:
         abort(404)
-        
+        #401 instead of 404
 
 @app.route("/user/signup", methods=["POST"])
 @validate_request(User)
 async def create_user(data):
+    print("SIGNUP")
     db = await _get_db()
     user = dataclasses.asdict(data)
     try:
@@ -100,12 +106,14 @@ async def create_game(data):
 
     game = dataclasses.asdict(data)
     # Returns the user_id for the given user_id
+    app.logger.info("SELECT user_id FROM users WHERE username = :username")
     user = await db.fetch_one("SELECT user_id FROM users WHERE username = :username"
     , values={"username": game["username"]})
     user_id = user[0]
 
     # Get a random word for the secret word
     rand = random.randint(1, 2309)
+    app.logger.info("SELECT word FROM answers WHERE answer_id = :answer_id")
     secretWord = await db.fetch_one("SELECT word FROM answers WHERE answer_id = :answer_id"
     , values={"answer_id": rand})
 
@@ -127,16 +135,20 @@ async def create_game(data):
 # Get all games for a certain user
 @app.route("/game/getGames/<string:username>", methods=["GET"])
 async def get_games(username):
+    print("GETTING GAMES FOR USER")
     db = await _get_db()
 
     # Returns the user_id for the given user_id
+    app.logger.info("SELECT user_id FROM users WHERE username = :username")
     user = await db.fetch_one("SELECT user_id FROM users WHERE username = :username"
     , values={"username": username})
     user_id = user[0]
 
     # gets all current games for that user
+    app.logger.info("SELECT game_id, finished FROM game WHERE user_id = :user_id and finished = False")
     games = await db.fetch_all("SELECT game_id, finished FROM game WHERE user_id = :user_id and finished = False"
     , values={"user_id": user_id})
+    print(games)
     listOfGames = []
     if games:
         for x in games:
@@ -161,8 +173,10 @@ async def evaluate_word(secret_word, guess_word):
             if (sl == gl and s == g):
                 correct.append(gl)
                 correctWithSpots.append({"letter": gl, "spot": g})
-            elif (sl == gl and (not(letter_exists(gl, *exist)))):
+                break
+            if (sl == gl and (not(letter_exists(gl, *exist)))):
                 exist.append(gl)
+                break
         if (not(letter_exists(gl, *correct)) and not(letter_exists(gl, *exist))):
             incorrect.append(gl)
 
@@ -177,18 +191,21 @@ async def evaluate_word(secret_word, guess_word):
 @app.route("/game/makeGuess", methods=["POST"])
 @validate_request(Guess)
 async def make_guess(data):
+    print("MAKING A GUESS")
     db = await _get_db()
     guess = dataclasses.asdict(data)
+    print(guess)
 
     # TODO
     # Prepare all data for guess
 
     secretWord = None
-
+    app.logger.info("SELECT user_id FROM users WHERE username = :username")
     user = await db.fetch_one("SELECT user_id FROM users WHERE username = :username"
     , values={"username": guess["username"]})
     user_id = user[0]
 
+    app.logger.info("SELECT secretWord, finished, guessAmount FROM game WHERE game_id = :game_id AND user_id = :user_id")
     game = await db.fetch_one("SELECT secretWord, finished, guessAmount FROM game WHERE game_id = :game_id AND user_id = :user_id"
     , values={"game_id": guess["game_id"], "user_id": user_id})
     if (game):
@@ -208,11 +225,14 @@ async def make_guess(data):
 
     # TODO
     # Check the guess if valid
-
+    app.logger.info("SELECT EXISTS(SELECT 1 FROM validGuess WHERE word= :guessWord)")
     value = await db.fetch_one("SELECT EXISTS(SELECT 1 FROM validGuess WHERE word= :guessWord)"
     , values={"guessWord": guessWord})
+    print(value)
+    app.logger.info("SELECT EXISTS(SELECT 1 FROM answers WHERE word= :guessWord)")
     value2 = await db.fetch_one("SELECT EXISTS(SELECT 1 FROM answers WHERE word= :guessWord)"
     , values={"guessWord": guessWord})
+    print(value2)
     if (value[0] or value2[0] or guessWord == secretWord):
         if (guessWord == secretWord or game[2] == 0):
             payload = {"finished": True,"game_id": game_id}
@@ -237,6 +257,7 @@ async def make_guess(data):
                 "Guess_correct": correct ,
                 "Guesses_remaining": remaining,
             }
+        print("VALID WORD")
 
         # add guess to guess table and decrement guess amount
         guess = {'guess_word': guessWord, 'game_id': game_id}
@@ -251,6 +272,7 @@ async def make_guess(data):
         except sqlite3.IntegrityError as e:
             abort(409, e)
 
+        print("UPDATING")
         payload = {"guessAmount": game[2] - 1,"game_id": game_id}
         try:
             id = await db.execute(
@@ -263,8 +285,10 @@ async def make_guess(data):
             abort(409, e)
 
         # Gets the actual past guesses/ guess words as "guess"
+        app.logger.info("SELECT guess_word as guess FROM guess WHERE game_id = :game_id")
         guesses = await db.fetch_all("SELECT guess_word as guess FROM guess WHERE game_id = :game_id"
         , values={"game_id": game_id})
+        print(guesses)
 
         # get all past results for each guess
         data = []
@@ -298,25 +322,31 @@ async def make_guess(data):
 # Get the status of a current game
 @app.route("/game/gameStatus/<string:username>&<int:game_id>", methods=["Get"])
 async def get_status(username, game_id):
+    print("Geting Game Status")
     db = await _get_db()
 
     # Get user_id to use later
+    app.logger.info("SELECT user_id FROM users WHERE username = :username")
     user = await db.fetch_one("SELECT user_id FROM users WHERE username = :username"
     , values={"username": username})
     user_id = user[0]
 
     # Gets the number of guesses left for the game that user started
     numOfGuesses = 0
+    app.logger.info("SELECT guessAmount, secretWord FROM game WHERE game_id = :game_id AND user_id = :user_id")
     game = await db.fetch_one("SELECT guessAmount, secretWord FROM game WHERE game_id = :game_id AND user_id = :user_id"
     , values={"game_id": game_id, "user_id": user_id})
     if (game):
+        print("GAME BELONGS TO USER")
         numOfGuesses = game[0]
     else:
         abort(404)
 
     # Gets the actual past guesses/ guess words as "guess"
+    app.logger.info("SELECT guess_word as guess FROM guess WHERE game_id = :game_id")
     guesses = await db.fetch_all("SELECT guess_word as guess FROM guess WHERE game_id = :game_id"
     , values={"game_id": game_id})
+    print(guesses)
 
     # get all past results for each guess
     data = []
