@@ -1,2 +1,2 @@
-[DATABASE]
+[DATABASES]
 URL = 'sqlite+aiosqlite:///var/wordle.db'
