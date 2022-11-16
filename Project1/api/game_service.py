@@ -43,7 +43,7 @@ async def close_connection(exception):
     db = getattr(g, "_sqlite_db", None)
     if db is not None:
         await db.disconnect()
-        
+
 @app.route("/game/", methods=["GET"])
 async def game():
     return "Starting game"

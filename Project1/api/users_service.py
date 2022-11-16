@@ -53,10 +53,10 @@ async def authenticate(username, password):
     , values={"username": username, "password": password})
     if user:
         return {"authenticated": "True"}
-        
+
     else:
         abort(404)
-        
+
 
 @app.route("/user/signup", methods=["POST"])
 @validate_request(User)
@@ -76,6 +76,6 @@ async def create_user(data):
 
     user["id"] = id
     return user, 201, {"Location": f"/user/{id}"}
-      
+
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5000, debug=True)
