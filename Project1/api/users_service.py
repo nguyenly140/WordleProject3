@@ -13,9 +13,7 @@ from quart_schema import QuartSchema, RequestSchemaValidationError, validate_req
 app = Quart(__name__)
 QuartSchema(app)
 
-#app.config.from_file(f"./etc/{__name__}.toml", toml.load)
-# this line of code with the {__name__} replace with wordle.toml till the correct database is created
-app.config.from_file(f"./etc/wordle.toml", toml.load)
+app.config.from_file(f"./etc/{__name__}.toml", toml.load)
 
 @dataclasses.dataclass
 class User:
