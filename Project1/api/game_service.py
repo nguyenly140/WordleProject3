@@ -298,4 +298,4 @@ async def get_status(username, game_id):
 
     abort(410)
 
-app.run(host="127.0.0.1", port=5002, debug=False)
+app.run(host="127.0.0.1", port=5100, debug=False)
