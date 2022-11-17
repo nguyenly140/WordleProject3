@@ -7,7 +7,7 @@ import random
 import databases
 import toml
 
-from quart import Quart, g, request, abort
+from quart import Quart, g, request, abort, redirect
 from quart_schema import QuartSchema, RequestSchemaValidationError, validate_request
 
 app = Quart(__name__)
@@ -46,19 +46,19 @@ async def user():
 # =========== USER API ROUTES ===========
 # =======================================
 
-@app.route("/user/auth/<string:username>&<string:password>", methods=["GET"])
-async def authenticate(username, password):
+@app.route("/auth", methods=["GET"])
+async def authenticate():
     db = await _get_db()
+    username = request.authorization["username"]
+    password = request.authorization["password"]
     user = await db.fetch_one("SELECT * FROM users WHERE username = :username AND password = :password"
     , values={"username": username, "password": password})
     if user:
-        return {"authenticated": "True"}
-
+        return {"authenticated": "True"}, 200
     else:
-        abort(404)
+        abort(401)
 
-
-@app.route("/user/signup", methods=["POST"])
+@app.route("/signup", methods=["POST"])
 @validate_request(User)
 async def create_user(data):
     db = await _get_db()
