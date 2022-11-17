@@ -255,7 +255,7 @@ async def make_guess(data):
         return {"ERROR": "GUESS IS NOT A VALUD GUESS"}
 
 # Get the status of a current game
-@app.route("/game/gameStatus/<string:username>&<int:game_id>", methods=["Get"])
+@app.route("/game/gameStatus/<string:username>/<int:game_id>", methods=["Get"])
 async def get_status(username, game_id):
     db = await _get_db()
 

@@ -49,14 +49,16 @@ async def user():
 @app.route("/auth", methods=["GET"])
 async def authenticate():
     db = await _get_db()
-    username = request.authorization["username"]
-    password = request.authorization["password"]
-    user = await db.fetch_one("SELECT * FROM users WHERE username = :username AND password = :password"
-    , values={"username": username, "password": password})
-    if user:
-        return {"authenticated": "True"}, 200
-    else:
-        abort(401)
+    if (request.authorization):
+        username = request.authorization["username"]
+        password = request.authorization["password"]
+        user = await db.fetch_one("SELECT * FROM users WHERE username = :username AND password = :password"
+        , values={"username": username, "password": password})
+        if user:
+            return {"authenticated": "True"}, 200
+        else:
+            return {"error": "User not authenticated"}, 401, {'WWW-Authenticate': 'Basic realm = "Login required"'}
+    return {"error": "User not authenticated"}, 401, {'WWW-Authenticate': 'Basic realm = "Login required"'}
 
 @app.route("/signup", methods=["POST"])
 @validate_request(User)
