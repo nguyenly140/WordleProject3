@@ -9,18 +9,19 @@ DROP TABLE IF EXISTS validGuess;
 DROP TABLE IF EXISTS users;
 
 CREATE TABLE users (
-    user_id INTEGER primary key,
-    username VARCHAR,
+    --user_id INTEGER primary key,
+    username VARCHAR primary key,
     UNIQUE(username)
 );
 
 CREATE TABLE game (
     game_id INTEGER primary key,
-    user_id INTEGER,
+    --user_id INTEGER,
+    username VARCHAR,
     guessAmount INTEGER,
     finished BOOLEAN DEFAULT FALSE,
     secretWord VARCHAR,
-    FOREIGN KEY (user_id) REFERENCES users (user_id)
+    FOREIGN KEY (username) REFERENCES users (username)
 );
 
 CREATE TABLE answers (

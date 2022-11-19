@@ -16,6 +16,10 @@ QuartSchema(app)
 app.config.from_file(f"./etc/{__name__}.toml", toml.load)
 
 @dataclasses.dataclass
+class Game:
+    username: str
+
+@dataclasses.dataclass
 class Guess:
     guess: str
     game_id: int
@@ -48,15 +52,17 @@ async def game():
 # =======================================
 
 @app.route("/game/new", methods=["POST"])
-async def create_game():
+@validate_request(Game)
+async def create_game(data):
     db = await _get_db()
 
-    username = request.authorization["username"]
-
+    #username = request.authorization["username"]
+    game = dataclasses.asdict(data)
+    #if username == game['username']:
     # Returns the user_id for the given user_id
-    user = await db.fetch_one("SELECT user_id FROM users WHERE username = :username"
+    user = await db.fetch_one("SELECT username FROM users WHERE username = :username"
     , values={"username": username})
-    user_id = user[0]
+    #user_id = user[0]
 
     # Get a random word for the secret word
     rand = random.randint(1, 2309)
@@ -64,13 +70,13 @@ async def create_game():
     , values={"answer_id": rand})
 
     # inserts game into db
-    game = {'user_id': user_id, 'guessAmount': 6, 'secretWord': secretWord[0]}
+    game = {'game_id': uuid.uuid4(), 'guessAmount': 6, 'secretWord': secretWord[0]}
 
     try:
         id = await db.execute(
             """
-            INSERT INTO game(user_id, guessAmount, secretWord)
-            VALUES(:user_id, :guessAmount, :secretWord);
+            INSERT INTO game(game_id, guessAmount, secretWord)
+            VALUES(:game_id, :guessAmount, :secretWord);
             """,
             game,
         )
@@ -84,15 +90,16 @@ async def get_games():
     db = await _get_db()
 
     username = request.authorization["username"]
-
-    # Returns the user_id for the given user_id
-    user = await db.fetch_one("SELECT user_id FROM users WHERE username = :username"
-    , values={"username": username})
-    user_id = user[0]
+    user = dataclasses.asdict(data)
+    if username == user:
+        # Returns the user_id for the given user_id
+        user = await db.fetch_one("SELECT user FROM users WHERE username = :username"
+        , values={"username": username})
+    #user_id = user[0]
 
     # gets all current games for that user
-    games = await db.fetch_all("SELECT game_id, finished FROM game WHERE user_id = :user_id and finished = False"
-    , values={"user_id": user_id})
+    games = await db.fetch_all("SELECT game_id, finished FROM game WHERE user = :user and finished = False"
+    , values={"user": user})
     listOfGames = []
     if games:
         for x in games:
@@ -143,12 +150,12 @@ async def make_guess(data):
 
     secretWord = None
 
-    user = await db.fetch_one("SELECT user_id FROM users WHERE username = :username"
+    user = await db.fetch_one("SELECT username FROM users WHERE username = :username"
     , values={"username": username})
     user_id = user[0]
 
-    game = await db.fetch_one("SELECT secretWord, finished, guessAmount FROM game WHERE game_id = :game_id AND user_id = :user_id"
-    , values={"game_id": guess["game_id"], "user_id": user_id})
+    game = await db.fetch_one("SELECT secretWord, finished, guessAmount FROM game WHERE game_id = :game_id AND username = :username"
+    , values={"game_id": guess["game_id"], "username": username})
     if (game):
         # game is not finished
         if(game[1] == 0 and game[2] != 0):
@@ -261,14 +268,14 @@ async def get_status(game_id):
     username = request.authorization["username"]
 
     # Get user_id to use later
-    user = await db.fetch_one("SELECT user_id FROM users WHERE username = :username"
+    user = await db.fetch_one("SELECT user FROM users WHERE username = :username"
     , values={"username": username})
     user_id = user[0]
 
     # Gets the number of guesses left for the game that user started
     numOfGuesses = 0
-    game = await db.fetch_one("SELECT guessAmount, secretWord FROM game WHERE game_id = :game_id AND user_id = :user_id"
-    , values={"game_id": game_id, "user_id": user_id})
+    game = await db.fetch_one("SELECT guessAmount, secretWord FROM game WHERE game_id = :game_id AND username = :username"
+    , values={"game_id": game_id, "username": username})
     if (game):
         numOfGuesses = game[0]
     else:

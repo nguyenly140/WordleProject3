@@ -7,7 +7,9 @@ import random
 import databases
 import toml
 
-from quart import Quart, g, request, abort, redirect
+import requests
+
+from quart import Quart, g, request, abort, redirect 
 from quart_schema import QuartSchema, RequestSchemaValidationError, validate_request
 
 app = Quart(__name__)
@@ -40,7 +42,8 @@ async def close_connection(exception):
 
 @app.route("/user/", methods=["GET"])
 async def user():
-    return "Welcome user"
+    response = requests.get('http://127.0.0.1:5000/auth')
+    print(response.headers) 
 
 # =======================================
 # =========== USER API ROUTES ===========
@@ -52,6 +55,7 @@ async def authenticate():
     if (request.authorization):
         username = request.authorization["username"]
         password = request.authorization["password"]
+        print(username, " ", password)
         user = await db.fetch_one("SELECT * FROM users WHERE username = :username AND password = :password"
         , values={"username": username, "password": password})
         if user:
@@ -76,5 +80,5 @@ async def create_user(data):
     except sqlite3.IntegrityError as e:
         abort(409, e)
 
-    user["id"] = id
+    #user["id"] = id
     return user, 201, {"Location": f"/user/{id}"}
