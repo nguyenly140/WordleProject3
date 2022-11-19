@@ -157,10 +157,10 @@ async def make_guess(data):
         # game is not finished
         if(game[1] == 0 and game[2] != 0):
             secretWord = game[0]
-        elif (game[1] == True and game[2] != 0):
+        elif (game[1] == True and game[2] > 0):
             return {"guessAmount": game[2], "solved": True}
-        elif (game[1] == True and game[2] == 0):
-            return {"guessAmount": game[2], "solved": False}
+        elif (game[1] == True and game[2] <= 0):
+            return {"guessAmount": 0, "solved": False}
     else:
         abort(404)
 
@@ -176,29 +176,6 @@ async def make_guess(data):
     value2 = await db.fetch_one("SELECT EXISTS(SELECT 1 FROM answers WHERE word= :guessWord)"
     , values={"guessWord": guessWord})
     if (value[0] or value2[0] or guessWord == secretWord):
-        if (guessWord == secretWord or game[2] == 0):
-            payload = {"finished": True,"game_id": game_id}
-            try:
-                id = await db.execute(
-                    """
-                    UPDATE game SET finished = :finished WHERE game_id = :game_id
-                    """,
-                    payload,
-                    )
-            except sqlite3.IntegrityError as e:
-                abort(409, e)
-
-            if (game[2] == 0):
-                remaining = game[2]
-                correct = False
-            else:
-                remaining = game[2] - 1,
-                correct = True
-            return {
-                "Guess_valid": True,
-                "Guess_correct": correct ,
-                "Guesses_remaining": remaining,
-            }
 
         # add guess to guess table and decrement guess amount
         guess = {'guess_word': guessWord, 'game_id': game_id}
@@ -223,6 +200,30 @@ async def make_guess(data):
             )
         except sqlite3.IntegrityError as e:
             abort(409, e)
+
+        if (guessWord == secretWord or game[2] == 0):
+            payload = {"finished": True,"game_id": game_id}
+            try:
+                id = await db.execute(
+                    """
+                    UPDATE game SET finished = :finished WHERE game_id = :game_id
+                    """,
+                    payload,
+                    )
+            except sqlite3.IntegrityError as e:
+                abort(409, e)
+
+            if (game[2] == 0):
+                remaining = game[2]
+                correct = False
+            else:
+                remaining = game[2] - 1,
+                correct = True
+            return {
+                "Guess_valid": True,
+                "Guess_correct": correct ,
+                "Guesses_remaining": remaining,
+            }
 
         # Gets the actual past guesses/ guess words as "guess"
         guesses = await db.fetch_all("SELECT guess_word as guess FROM guess WHERE game_id = :game_id"
@@ -252,7 +253,7 @@ async def make_guess(data):
             "Guess_results": {"guess": guessWord, "results": locations},
             }
         else:
-            return {"guessesLeft": numOfGuesses}
+            return {"guessesLeft": 0}
 
     else:
         return {"ERROR": "GUESS IS NOT A VALUD GUESS"}
