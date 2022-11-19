@@ -2,11 +2,11 @@
 
 PRAGMA foreign_keys=ON;
 BEGIN TRANSACTION;
+DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS game;
 DROP TABLE IF EXISTS answers;
 DROP TABLE IF EXISTS guess;
 DROP TABLE IF EXISTS validGuess;
-DROP TABLE IF EXISTS users;
 
 CREATE TABLE users (
     --user_id INTEGER primary key,

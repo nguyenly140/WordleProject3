@@ -23,7 +23,7 @@ app.config.from_file(f"./etc/{__name__}.toml", toml.load)
 @dataclasses.dataclass
 class Guess:
     guess: str
-    game_id: str 
+    game_id: str
 
 
 async def _connect_db():
@@ -52,7 +52,7 @@ async def game():
 # =========== GAME API ROUTES ===========
 # =======================================
 
-@app.route("/game/makeGame", methods=["POST"])
+@app.route("/game/new", methods=["POST"])
 #@validate_request(Game)
 async def create_game():
     db = await _get_db()
@@ -60,7 +60,7 @@ async def create_game():
     username = request.authorization["username"]
 
     #testing for storage into db
-    #try: 
+    #try:
     #    await db.execute(
     #            """
     #            INSERT INTO users(username)
@@ -272,8 +272,7 @@ async def get_status(game_id):
     # Gets the number of guesses left for the game that user started
     numOfGuesses = 0
     game = await db.fetch_one("SELECT guessAmount, secretWord FROM game WHERE game_id = :game_id AND username = :username"
-    , values={"game_id": game_id})
-    #, "username": username})
+    , values={"game_id": game_id, "username": username})
     if (game):
         numOfGuesses = game[0]
     else:
