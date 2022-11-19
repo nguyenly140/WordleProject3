@@ -2,17 +2,14 @@
 This is a project for class. An API and database system that can handle requests relating to the game "Wordle".
 In this project we create two micro services and implement reverse proxys and load balancing.
 
-Developed by:      |
-Joshua Popp        |
-Apeksha shah       |
-Hardik Vagrecha    |
-Ly Nguyen          |
-                   |
-7 PM: Tuesday Class|
-Section-01         |
-___________________|
-
-
+Developed by:      
+Joshua Popp        
+Apeksha shah       
+Hardik Vagrecha    
+Ly Nguyen          
+                   
+7 PM: Tuesday Class
+Section-01         
 
 
 Welcome to Project 2
