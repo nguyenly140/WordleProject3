@@ -16,12 +16,7 @@ QuartSchema(app)
 app.config.from_file(f"./etc/{__name__}.toml", toml.load)
 
 @dataclasses.dataclass
-class Game:
-    username: str
-
-@dataclasses.dataclass
 class Guess:
-    username: str
     guess: str
     game_id: int
 
@@ -53,14 +48,14 @@ async def game():
 # =======================================
 
 @app.route("/game/new", methods=["POST"])
-@validate_request(Game)
-async def create_game(data):
+async def create_game():
     db = await _get_db()
 
-    game = dataclasses.asdict(data)
+    username = request.authorization["username"]
+
     # Returns the user_id for the given user_id
     user = await db.fetch_one("SELECT user_id FROM users WHERE username = :username"
-    , values={"username": game["username"]})
+    , values={"username": username})
     user_id = user[0]
 
     # Get a random word for the secret word
@@ -84,9 +79,11 @@ async def create_game(data):
     return { "gameId": id }
 
 # Get all games for a certain user
-@app.route("/game/getGames/<string:username>", methods=["GET"])
-async def get_games(username):
+@app.route("/game/getGames", methods=["GET"])
+async def get_games():
     db = await _get_db()
+
+    username = request.authorization["username"]
 
     # Returns the user_id for the given user_id
     user = await db.fetch_one("SELECT user_id FROM users WHERE username = :username"
@@ -139,13 +136,15 @@ async def make_guess(data):
     db = await _get_db()
     guess = dataclasses.asdict(data)
 
+    username = request.authorization["username"]
+
     # TODO
     # Prepare all data for guess
 
     secretWord = None
 
     user = await db.fetch_one("SELECT user_id FROM users WHERE username = :username"
-    , values={"username": guess["username"]})
+    , values={"username": username})
     user_id = user[0]
 
     game = await db.fetch_one("SELECT secretWord, finished, guessAmount FROM game WHERE game_id = :game_id AND user_id = :user_id"
@@ -255,9 +254,11 @@ async def make_guess(data):
         return {"ERROR": "GUESS IS NOT A VALUD GUESS"}
 
 # Get the status of a current game
-@app.route("/game/gameStatus/<string:username>/<int:game_id>", methods=["Get"])
-async def get_status(username, game_id):
+@app.route("/game/gameStatus/<int:game_id>", methods=["Get"])
+async def get_status(game_id):
     db = await _get_db()
+
+    username = request.authorization["username"]
 
     # Get user_id to use later
     user = await db.fetch_one("SELECT user_id FROM users WHERE username = :username"
@@ -297,5 +298,3 @@ async def get_status(username, game_id):
         return {"guessesLeft": numOfGuesses}
 
     abort(410)
-
-app.run(host="127.0.0.1", port=5100, debug=False)

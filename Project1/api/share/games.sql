@@ -11,13 +11,8 @@ DROP TABLE IF EXISTS users;
 CREATE TABLE users (
     user_id INTEGER primary key,
     username VARCHAR,
-    password VARCHAR,
     UNIQUE(username)
 );
-
-INSERT INTO users(username, password) VALUES('one','1pass');
-INSERT INTO users(username, password) VALUES('two','2pass');
-INSERT INTO users(username, password) VALUES('three','3pass');
 
 CREATE TABLE game (
     game_id INTEGER primary key,
