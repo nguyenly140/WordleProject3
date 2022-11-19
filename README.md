@@ -18,19 +18,17 @@ ___________________|
 Welcome to Project 2
 
 Set-Up Instructions:
-	1) Copy the nginx.txt contents into the nginx config file on your system
-	2) Restart the nginx file with the nginx restart command
-	3) Inside the api directory run "bin/init.sh" to initiate db
-	4) Verify that the var folder contains a users.db and a games.db
-	5) run "foreman start --formation users_service=1,game_service=3"
-	6) The servers should be running after this
-	7) Open a new terminal and begin making API calls below
+
+1) Copy the nginx.txt contents into the nginx config file on your system
+2) Restart the nginx file with the nginx restart command
+3) Inside the api directory run "bin/init.sh" to initiate db
+4) Verify that the var folder contains a users.db and a games.db
+5) run "foreman start --formation users_service=1,game_service=3"
+6) The servers should be running after this
+7) Open a new terminal and begin making API calls below
 
 
 API calls using http:
-
-** anything in [] you type in **
-
 
 	Sign-Up:                          http POST tuffix-vm/signUp username=[example] password=[example]
 
