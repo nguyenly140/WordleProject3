@@ -15,7 +15,7 @@ CREATE TABLE users (
 );
 
 CREATE TABLE game (
-    game_id INTEGER primary key,
+    game_id VARCHAR primary key,
     --user_id INTEGER,
     username VARCHAR,
     guessAmount INTEGER,
@@ -32,7 +32,7 @@ CREATE TABLE answers (
 
 CREATE TABLE guess (
      guess_id INTEGER primary key,
-     game_id INTEGER,
+     game_id VARCHAR,
      guess_word VARCHAR,
      FOREIGN KEY (game_id) REFERENCES game (game_id)
 );

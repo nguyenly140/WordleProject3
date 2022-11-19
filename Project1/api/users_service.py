@@ -70,12 +70,12 @@ async def create_user(data):
     db = await _get_db()
     user = dataclasses.asdict(data)
     try:
-        id = await db.execute(
-            """
-            INSERT INTO users(username, password)
-            VALUES(:username,:password);
-            """,
-            user,
+        await db.execute(
+        """
+        INSERT INTO users(username, password)
+        VALUES(:username,:password);
+        """,
+        user,
         )
     except sqlite3.IntegrityError as e:
         abort(409, e)

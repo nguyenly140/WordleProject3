@@ -6,6 +6,7 @@ import random
 
 import databases
 import toml
+import uuid
 
 from quart import Quart, g, request, abort
 from quart_schema import QuartSchema, RequestSchemaValidationError, validate_request
@@ -15,14 +16,14 @@ QuartSchema(app)
 
 app.config.from_file(f"./etc/{__name__}.toml", toml.load)
 
-@dataclasses.dataclass
-class Game:
-    username: str
+#@dataclasses.dataclass
+#class Game:
+#    username: str
 
 @dataclasses.dataclass
 class Guess:
     guess: str
-    game_id: int
+    game_id: str 
 
 
 async def _connect_db():
@@ -51,18 +52,24 @@ async def game():
 # =========== GAME API ROUTES ===========
 # =======================================
 
-@app.route("/game/new", methods=["POST"])
-@validate_request(Game)
-async def create_game(data):
+@app.route("/game/makeGame", methods=["POST"])
+#@validate_request(Game)
+async def create_game():
     db = await _get_db()
 
-    #username = request.authorization["username"]
-    game = dataclasses.asdict(data)
-    #if username == game['username']:
-    # Returns the user_id for the given user_id
-    user = await db.fetch_one("SELECT username FROM users WHERE username = :username"
-    , values={"username": username})
-    #user_id = user[0]
+    username = request.authorization["username"]
+
+    #testing for storage into db
+    #try: 
+    #    await db.execute(
+    #            """
+    #            INSERT INTO users(username)
+    #            VALUES(:username);
+    #            """,
+    #            values={"username": username}
+    #            )
+    #except sqlite3.IntegrityError as e:
+    #    abort(409, e)
 
     # Get a random word for the secret word
     rand = random.randint(1, 2309)
@@ -70,19 +77,19 @@ async def create_game(data):
     , values={"answer_id": rand})
 
     # inserts game into db
-    game = {'game_id': uuid.uuid4(), 'guessAmount': 6, 'secretWord': secretWord[0]}
-
+    test = str(uuid.uuid4())
+    game = {'game_id': test, "username": username, 'guessAmount': 6, 'secretWord': secretWord[0]}
     try:
         id = await db.execute(
             """
-            INSERT INTO game(game_id, guessAmount, secretWord)
-            VALUES(:game_id, :guessAmount, :secretWord);
+            INSERT INTO game(game_id, username, guessAmount, secretWord)
+            VALUES(:game_id, :username, :guessAmount, :secretWord);
             """,
-            game,
-        )
+            game
+         )
     except sqlite3.IntegrityError as e:
         abort(409, e)
-    return { "gameId": id }
+    return { "gameId": test, "username": username }
 
 # Get all games for a certain user
 @app.route("/game/getGames", methods=["GET"])
@@ -90,16 +97,10 @@ async def get_games():
     db = await _get_db()
 
     username = request.authorization["username"]
-    user = dataclasses.asdict(data)
-    if username == user:
-        # Returns the user_id for the given user_id
-        user = await db.fetch_one("SELECT user FROM users WHERE username = :username"
-        , values={"username": username})
-    #user_id = user[0]
 
     # gets all current games for that user
-    games = await db.fetch_all("SELECT game_id, finished FROM game WHERE user = :user and finished = False"
-    , values={"user": user})
+    games = await db.fetch_all("SELECT game_id, finished FROM game WHERE username = :username and finished = False"
+    , values={"username": username})
     listOfGames = []
     if games:
         for x in games:
@@ -149,10 +150,6 @@ async def make_guess(data):
     # Prepare all data for guess
 
     secretWord = None
-
-    user = await db.fetch_one("SELECT username FROM users WHERE username = :username"
-    , values={"username": username})
-    user_id = user[0]
 
     game = await db.fetch_one("SELECT secretWord, finished, guessAmount FROM game WHERE game_id = :game_id AND username = :username"
     , values={"game_id": guess["game_id"], "username": username})
@@ -261,21 +258,22 @@ async def make_guess(data):
         return {"ERROR": "GUESS IS NOT A VALUD GUESS"}
 
 # Get the status of a current game
-@app.route("/game/gameStatus/<int:game_id>", methods=["Get"])
+@app.route("/game/gameStatus/<string:game_id>", methods=["GET"])
 async def get_status(game_id):
     db = await _get_db()
 
     username = request.authorization["username"]
 
     # Get user_id to use later
-    user = await db.fetch_one("SELECT user FROM users WHERE username = :username"
-    , values={"username": username})
-    user_id = user[0]
+    #user = await db.fetch_one("SELECT user FROM users WHERE username = :username"
+    #, values={"username": username})
+    #user_id = user[0]
 
     # Gets the number of guesses left for the game that user started
     numOfGuesses = 0
     game = await db.fetch_one("SELECT guessAmount, secretWord FROM game WHERE game_id = :game_id AND username = :username"
-    , values={"game_id": game_id, "username": username})
+    , values={"game_id": game_id})
+    #, "username": username})
     if (game):
         numOfGuesses = game[0]
     else:
