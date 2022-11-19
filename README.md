@@ -1,6 +1,6 @@
 # WordleCPSC449
 This is a project for class. An API and database system that can handle requests relating to the game "Wordle".
-In this project we create two micro services.
+In this project we create two micro services and implement reverse proxys and load balancing.
 
 Developed by:      |
 Joshua Popp        |
@@ -17,19 +17,16 @@ ___________________|
 
 Welcome to Project 2
 
-=====================================================================
 Set-Up Instructions:
-1) Copy the nginx.txt contents into the nginx config file on your system
-2) Restart the nginx file with the nginx restart command
-3) Inside the api directory run "bin/init.sh" to initiate db
-4) Verify that the var folder contains a users.db and a games.db
-5) run "foreman start --formation users_service=1,game_service=3"
-6) The servers should be running after this
-7) Open a new terminal and begin making API calls below
-=====================================================================
+	1) Copy the nginx.txt contents into the nginx config file on your system
+	2) Restart the nginx file with the nginx restart command
+	3) Inside the api directory run "bin/init.sh" to initiate db
+	4) Verify that the var folder contains a users.db and a games.db
+	5) run "foreman start --formation users_service=1,game_service=3"
+	6) The servers should be running after this
+	7) Open a new terminal and begin making API calls below
 
 
-=====================================================================
 API calls using http:
 
 ** anything in [] you type in **
